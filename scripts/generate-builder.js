@@ -21,18 +21,19 @@ const aviableTypes = [
 const typeIsVector = type =>
   type.substring(0, 6).toLocaleLowerCase() === 'vector';
 
-const calcFlags = params => {
+const calcFlags = (name, params) => {
   const bitMap = [];
+  const paramRegex = RegExp(`^${name}\\.[0-9]+\\?`);
 
   params.forEach(param => {
-    if (param.type.includes('?')) {
+    if (paramRegex.exec(param.type)) {
       const count = param.type.split('?')[0].split('.')[1];
 
       bitMap.push(`(this.has(params.${param.name}) << ${count})`);
     }
   });
 
-  const flagsLine = `    const flags = ${bitMap.join(' | ')};`;
+  const flagsLine = `    const ${name} = ${bitMap.join(' | ')};`;
 
   return flagsLine;
 };
@@ -46,12 +47,12 @@ const paramsToLines = params => {
 
     // Flags
     if (param.type === '#') {
-      const flagsLine = calcFlags(params);
+      const flagsLine = calcFlags(param.name, params);
 
       paramsLines.push(flagsLine);
 
       fnName = 'int32';
-      args = ['flags'];
+      args = [param.name];
     } else if (param.type.includes('?')) {
       let flagType = param.type.split('?')[1];
 
